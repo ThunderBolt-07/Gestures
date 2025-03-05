@@ -4,7 +4,8 @@ const path = require('path');
 module.exports = {
     mode: 'production',
     entry: {
-        options: './src/options.js'  // ✅ Entry for options.js
+        options: './src/options.js',  // ✅ Entry for options.js
+        datacollection:'./src/datacollection.js' // ✅ Entry for datacollection.js
     },
     output: {
         filename: '[name].bundle.js',  // ✅ Outputs options.bundle.js
@@ -31,8 +32,8 @@ module.exports = {
     plugins: [
         new CopyWebpackPlugin({
             patterns: [
-                { from: path.resolve(__dirname, 'manifest.json'), to: 'manifest.json' },  // ✅ Corrected path
-                { from: path.resolve(__dirname, 'src/options.html'), to: 'options.html' }    // ✅ Corrected path
+                { from: path.resolve(__dirname, 'manifest.json'), to: 'manifest.json' }, 
+                { from: path.resolve(__dirname, 'src/options.html'), to: 'options.html' }    
             ],
         }),
     ],

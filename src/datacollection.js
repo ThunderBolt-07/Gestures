@@ -8,6 +8,8 @@ tf.setBackend("webgl").then(() => {
 });
 const video = document.getElementById("video");
 const button = document.getElementById("permission");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
 button.addEventListener("click", async () => {
   console.log("requesting video");
   const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
@@ -32,12 +34,26 @@ async function loadHandposeModel() {
       let flattened_predcitons = predictions[0].landmarks.flat();
       //console.log(flattened_predcitons);
       data.push(flattened_predcitons);
-      if(data.length>500){
+      if(data.length==3000){
         downloadCSV(data);
         data = [];
       }
+      drawPointsOnCanvas(predictions[0].landmarks);
     }
-  }, 30);
+  }, 25);
+  function drawPointsOnCanvas(points) {
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw points
+    points.forEach(point => {
+      ctx.beginPath();
+      ctx.arc(point[0], point[1], 5, 0, 2 * Math.PI);
+      ctx.fillStyle = "red";
+      ctx.fill();
+    });
+
+  }
 
   function downloadCSV(data, filename = "data.csv") {
     // Convert 2D array to CSV format
