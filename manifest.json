@@ -9,5 +9,8 @@
     },
     "permissions": [],
     "host_permissions": ["<all_urls>"],
-    "options_page": "src/options.html"
+    "options_page": "src/options.html",
+    "background": {
+    "service_worker": "src/serviceWorker.js"
+  }
   }

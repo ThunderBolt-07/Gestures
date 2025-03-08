@@ -3,59 +3,109 @@ import * as tf from "@tensorflow/tfjs";
 import "@tensorflow/tfjs-backend-webgl"; // For WebGL acceleration
 console.log("TensorFlow.js version");
 // Ensure WebGL backend is available
+
 tf.setBackend("webgl").then(() => {
   console.log("WebGL backend loaded");
 });
+
 const video = document.getElementById("video");
 const button = document.getElementById("permission");
+
 button.addEventListener("click", async () => {
   console.log("requesting video");
-  const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: {},
+  });
   video.srcObject = stream;
   video.play();
   console.log("playng video");
-  loadHandposeModel();
+ // detectandPredictResults();
 });
-let data=[]
-async function loadHandposeModel() {
-  console.log("Loading Handpose model...");
-  const model = await handpose.load();
-  console.log("Handpose model loaded");
-  //rruning hande detectiob every 30 ms
-  
-  setInterval(async () => {
-    const predictions = await model.estimateHands(
-      document.querySelector("video")
-    );
-    if(predictions.length>0){
-      console.log(data.length);
-      let flattened_predcitons = predictions[0].landmarks.flat();
-      //console.log(flattened_predcitons);
-      data.push(flattened_predcitons);
-      if(data.length>500){
-        downloadCSV(data);
-        data = [];
-      }
-    }
-  }, 30);
+let handpose_model = null;
+let gesture_model = null;
 
-  function downloadCSV(data, filename = "data.csv") {
-    // Convert 2D array to CSV format
-    const csvContent = data.map(row => row.join(",")).join("\n");
+async function loadModels() {
+  console.log("Loading models...");
 
-    // Create a Blob with CSV data
-    const blob = new Blob([csvContent], { type: "text/csv" });
+  [handpose_model, gesture_model] = await Promise.all([
+    handpose.load(),
+    tf.loadLayersModel("../model/model.json"),
+  ]);
 
-    // Create a download link
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-
-    // Append to document and trigger download
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+  console.log("Models loaded");
+  detectandPredictResults()
 }
 
-  // Example: Predicting from a webcam video
+loadModels();
+
+// async function detectandPredictResults() {
+//   //rruning hande detectiob every 30 ms
+
+//   for (let i = 1; i < 1000000000; i++) {
+//     if (i % 100000000 == 0) {
+//       i=1;
+//       if (handpose_model) {
+//         const predictions = await handpose_model.estimateHands(
+//           document.querySelector("video")
+//         );
+//         if (predictions.length > 0 && gesture_model) {
+//           const hand = predictions[0].landmarks;
+//           const normalized_landmarks=normalizeHands(hand);
+//           console.log(normalized_landmarks);
+//           console.log("Hand detected");
+          
+//         }else{
+//           console.log("Gesture model not loaded",predictions);
+//         }
+//       }else{
+//         console.log("Handpose model not loaded");
+//       } 
+//     }
+//   }
+//   console.log("Loading Handpose model...");
+// }
+
+async function detectandPredictResults() {
+  
+  for(let i=1;i<1000000000;i++){
+    if(i%50000000==0){
+      i=1;
+      if(handpose_model){
+        const predictions = await handpose_model.estimateHands(video);
+        if(predictions.length>0 && gesture_model){
+          const hand = predictions[0].landmarks;
+          const normalized_landmarks = normalizeHands(hand);
+          console.log("Hand detected:", normalized_landmarks);
+        }else{
+          console.log("No hand detected or gesture model not loaded");
+        }
+      }else{
+        console.log("Handpose model not loaded");
+      }
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    }
+  }
+  // const predictions = await handpose_model.estimateHands(video);
+
+  // if (predictions.length > 0 && gesture_model) {
+  //   const hand = predictions[0].landmarks;
+  //   const normalized_landmarks = normalizeHands(hand);
+  //   console.log("Hand detected:", normalized_landmarks);
+  // } else {
+  //   console.log("No hand detected or gesture model not loaded");
+  // }
+
+  // // Request next frame
+  // requestAnimationFrame(detectandPredictResults);
+}
+
+function normalizeHands(hand){
+  let minX=hand[0][0],maxX=hand[0][0],minY=hand[0][1],maxY=hand[0][1]
+  for(let i=0;i<hand.length;i++){
+    minX=Math.min(minX,hand[i][0]);
+    maxX=Math.max(maxX,hand[i][0]);
+    minY=Math.min(minY,hand[i][1]);
+    maxY=Math.max(maxY,hand[i][1]);
+  }
+  return hand.map(point=>[(point[0]-minX)/(maxX-minX),(point[1]-minY)/(maxY-minY)]);
 }
