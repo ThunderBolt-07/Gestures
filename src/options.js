@@ -69,6 +69,8 @@ loadModels();
 // }
 
 async function detectandPredictResults() {
+  let prevPredcition=null;
+  let count=0;
   
   for(let i=1;i<1000000000;i++){
     if(i%50000000==0){
@@ -84,11 +86,27 @@ async function detectandPredictResults() {
           //console.log("Tensor:", tensor,tensor.shape);
           const gesture_predictions = await gesture_model.predict(tensor).data();
           const gesture_made = gesture_predictions.indexOf(Math.max(...gesture_predictions));
-          //console.log("Prediction:", gesture_made); 
+          if(count===0){
+            prevPredcition=gesture_made;
+            count++;
+          }else if(prevPredcition!=gesture_made){
+            prevPredcition=gesture_made;
+            count=0;
+          }else if(prevPredcition==gesture_made){
+            count++;
+          }
+          if(count==6){
+            chrome.runtime.sendMessage({message:"gesture registered",gesture:gesture_made});
+            count=0;
+            console.log("message sent");
+          }
+          console.log(count); 
           drawPointsOnCanvas(predictions[0].landmarks);
 
          // console.log("Hand detected:", [].concat(...normalized_landmarks));
         }else{
+          prevPredcition=0;
+          count=1;
           console.log("No hand detected or gesture model not loaded");
         }
       }else{
