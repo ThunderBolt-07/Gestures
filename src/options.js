@@ -11,6 +11,9 @@ tf.setBackend("webgl").then(() => {
 const video = document.getElementById("video");
 const button = document.getElementById("permission");
 
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
 button.addEventListener("click", async () => {
   console.log("requesting video");
   const stream = await navigator.mediaDevices.getUserMedia({
@@ -74,8 +77,17 @@ async function detectandPredictResults() {
         const predictions = await handpose_model.estimateHands(video);
         if(predictions.length>0 && gesture_model){
           const hand = predictions[0].landmarks;
-          const normalized_landmarks = normalizeHands(hand);
-          console.log("Hand detected:", normalized_landmarks);
+          const normalized_landmarks =normalizeHands(hand);
+          //console.log("Normalized Landmarks:", normalized_landmarks);
+          const tensor = tf.tensor(normalized_landmarks).reshape([1,42]);
+          //tensor.print() 
+          //console.log("Tensor:", tensor,tensor.shape);
+          const gesture_predictions = await gesture_model.predict(tensor).data();
+          const gesture_made = gesture_predictions.indexOf(Math.max(...gesture_predictions));
+          //console.log("Prediction:", gesture_made); 
+          drawPointsOnCanvas(predictions[0].landmarks);
+
+         // console.log("Hand detected:", [].concat(...normalized_landmarks));
         }else{
           console.log("No hand detected or gesture model not loaded");
         }
@@ -99,7 +111,22 @@ async function detectandPredictResults() {
   // requestAnimationFrame(detectandPredictResults);
 }
 
+function drawPointsOnCanvas(points) {
+  // Clear canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw points
+  points.forEach(point => {
+    ctx.beginPath();
+    ctx.arc(point[0], point[1], 5, 0, 2 * Math.PI);
+    ctx.fillStyle = "red";
+    ctx.fill();
+  });
+
+}
+
 function normalizeHands(hand){
+  //console.log(hand);
   let minX=hand[0][0],maxX=hand[0][0],minY=hand[0][1],maxY=hand[0][1]
   for(let i=0;i<hand.length;i++){
     minX=Math.min(minX,hand[i][0]);
@@ -107,5 +134,7 @@ function normalizeHands(hand){
     minY=Math.min(minY,hand[i][1]);
     maxY=Math.max(maxY,hand[i][1]);
   }
-  return hand.map(point=>[(point[0]-minX)/(maxX-minX),(point[1]-minY)/(maxY-minY)]);
+  const x_values=hand.map(point=>(point[0]-minX)/(maxX-minX));
+  const y_values=hand.map(point=>(point[1]-minY)/(maxY-minY));
+  return [...x_values,...y_values];
 }
