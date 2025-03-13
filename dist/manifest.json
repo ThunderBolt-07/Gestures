@@ -1,16 +1,26 @@
 {
-    "name": "Hello Extensions",
-    "description": "Base Level Extension",
-    "version": "1.0",
-    "manifest_version": 3,
-    "action": {
-      "default_popup": "src/hello.html",
-      "default_icon": "icon.png"
-    },
-    "permissions": [],
-    "host_permissions": ["<all_urls>"],
-    "options_page": "src/options.html",
-    "background": {
+  "name": "Hello Extensions",
+  "description": "Base Level Extension",
+  "version": "1.0",
+  "manifest_version": 3,
+  "action": {
+    "default_popup": "src/hello.html",
+    "default_icon": "icon.png"
+  },
+  "permissions": [],
+  "host_permissions": ["<all_urls>"],
+  "options_page": "src/options.html",
+  "background": {
     "service_worker": "src/serviceWorker.js"
-  }
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>",
+        "https://*/*",
+        "http://*/*"],
+
+      "js": ["src/contentscript.js"],
+      "run_at": "document_start"
+    }
+  ]
+}

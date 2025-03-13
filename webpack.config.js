@@ -5,7 +5,8 @@ module.exports = {
     mode: 'production',
     entry: {
         options: './src/options.js',  // ✅ Entry for options.js
-        datacollection:'./src/datacollection.js' // ✅ Entry for datacollection.js
+        datacollection:'./src/datacollection.js', // ✅ Entry for datacollection.js
+        contentScript: "./src/contentScript.js",
     },
     output: {
         filename: '[name].bundle.js',  // ✅ Outputs options.bundle.js
@@ -42,5 +43,8 @@ module.exports = {
             "fs": false, 
             "path": false
         }
+    },
+    optimization: {
+        minimize: false,  
     }
 };

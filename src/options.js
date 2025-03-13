@@ -22,7 +22,7 @@ button.addEventListener("click", async () => {
   video.srcObject = stream;
   video.play();
   console.log("playng video");
- // detectandPredictResults();
+  // detectandPredictResults();
 });
 let handpose_model = null;
 let gesture_model = null;
@@ -36,123 +36,106 @@ async function loadModels() {
   ]);
 
   console.log("Models loaded");
-  detectandPredictResults()
+  chrome.runtime.sendMessage({ message: "models loaded" });
+  //detectandPredictResults()
+  //processFrame();
 }
 
 loadModels();
+let t1 = new Date().getTime();
+let count = 0;
+let prevPredcition = null;
 
-// async function detectandPredictResults() {
-//   //rruning hande detectiob every 30 ms
+chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
+  //console.log("Received from background.js:", new Date().getTime() - t1);
 
-//   for (let i = 1; i < 1000000000; i++) {
-//     if (i % 100000000 == 0) {
-//       i=1;
-//       if (handpose_model) {
-//         const predictions = await handpose_model.estimateHands(
-//           document.querySelector("video")
-//         );
-//         if (predictions.length > 0 && gesture_model) {
-//           const hand = predictions[0].landmarks;
-//           const normalized_landmarks=normalizeHands(hand);
-//           console.log(normalized_landmarks);
-//           console.log("Hand detected");
-          
-//         }else{
-//           console.log("Gesture model not loaded",predictions);
-//         }
-//       }else{
-//         console.log("Handpose model not loaded");
-//       } 
-//     }
-//   }
-//   console.log("Loading Handpose model...");
-// }
+  const predictions = await handpose_model.estimateHands(video);
+  if (predictions.length > 0 && gesture_model) {
+    const hand = predictions[0].landmarks;
+    const normalized_landmarks = normalizeHands(hand);
+    //console.log("Normalized Landmarks:", normalized_landmarks);
+    const tensor = tf.tensor(normalized_landmarks).reshape([1, 42]);
+    //tensor.print()
+    //console.log("Tensor:", tensor,tensor.shape);
+    const gesture_predictions = await gesture_model.predict(tensor).data();
+    tensor.dispose();
 
-async function detectandPredictResults() {
-  let prevPredcition=null;
-  let count=0;
-  
-  for(let i=1;i<1000000000;i++){
-    if(i%50000000==0){
-      i=1;
-      if(handpose_model){
-        const predictions = await handpose_model.estimateHands(video);
-        if(predictions.length>0 && gesture_model){
-          const hand = predictions[0].landmarks;
-          const normalized_landmarks =normalizeHands(hand);
-          //console.log("Normalized Landmarks:", normalized_landmarks);
-          const tensor = tf.tensor(normalized_landmarks).reshape([1,42]);
-          //tensor.print() 
-          //console.log("Tensor:", tensor,tensor.shape);
-          const gesture_predictions = await gesture_model.predict(tensor).data();
-          const gesture_made = gesture_predictions.indexOf(Math.max(...gesture_predictions));
-          if(count===0){
-            prevPredcition=gesture_made;
-            count++;
-          }else if(prevPredcition!=gesture_made){
-            prevPredcition=gesture_made;
-            count=0;
-          }else if(prevPredcition==gesture_made){
-            count++;
-          }
-          if(count==6){
-            chrome.runtime.sendMessage({message:"gesture registered",gesture:gesture_made});
-            count=0;
-            console.log("message sent");
-          }
-          console.log(count); 
-          drawPointsOnCanvas(predictions[0].landmarks);
-
-         // console.log("Hand detected:", [].concat(...normalized_landmarks));
-        }else{
-          prevPredcition=0;
-          count=1;
-          console.log("No hand detected or gesture model not loaded");
-        }
-      }else{
-        console.log("Handpose model not loaded");
-      }
-      await new Promise((resolve) => setTimeout(resolve, 30));
+    const gesture_made = gesture_predictions.indexOf(
+      Math.max(...gesture_predictions)
+    );
+    if (count === 0) {
+      prevPredcition = gesture_made;
+      count++;
+    } else if (prevPredcition != gesture_made) {
+      prevPredcition = gesture_made;
+      count = 0;
+    } else if (prevPredcition == gesture_made) {
+      count++;
     }
+    if(count==6){
+      chrome.runtime.sendMessage({message:"gesture registered",gesture:gesture_made});
+      count=0;
+      console.log("message sent");
+    }
+    t1 = new Date().getTime();
+    console.log("gesture made is:", gesture_made);
   }
-  // const predictions = await handpose_model.estimateHands(video);
+});
 
-  // if (predictions.length > 0 && gesture_model) {
-  //   const hand = predictions[0].landmarks;
-  //   const normalized_landmarks = normalizeHands(hand);
-  //   console.log("Hand detected:", normalized_landmarks);
-  // } else {
-  //   console.log("No hand detected or gesture model not loaded");
-  // }
 
-  // // Request next frame
-  // requestAnimationFrame(detectandPredictResults);
-}
 
+  
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.message === "request frame") {
+    //detectandPredictResults();
+    console.log("Requesting frame");
+    console.log(new Date().getTime() - request.time);
+  }
+});
+
+chrome.runtime.onConnect.addListener((port) => {
+  console.log("Connected to service worker");
+
+  port.onMessage.addListener((msg) => {
+    console.log("Received from service worker:", msg);
+    console.log("Requesting frame");
+    console.log(new Date().getTime() - msg.time);
+    if (msg.message === "gesture registered") {
+      console.log("Gesture Detected:", msg.gesture);
+    }
+  });
+
+  port.onDisconnect.addListener(() => {
+    console.log("Disconnected from service worker");
+  });
+});
 function drawPointsOnCanvas(points) {
   // Clear canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // Draw points
-  points.forEach(point => {
+  points.forEach((point) => {
     ctx.beginPath();
     ctx.arc(point[0], point[1], 5, 0, 2 * Math.PI);
     ctx.fillStyle = "red";
     ctx.fill();
   });
-
 }
 
-function normalizeHands(hand){
+function normalizeHands(hand) {
   //console.log(hand);
-  let minX=hand[0][0],maxX=hand[0][0],minY=hand[0][1],maxY=hand[0][1]
-  for(let i=0;i<hand.length;i++){
-    minX=Math.min(minX,hand[i][0]);
-    maxX=Math.max(maxX,hand[i][0]);
-    minY=Math.min(minY,hand[i][1]);
-    maxY=Math.max(maxY,hand[i][1]);
+  let minX = hand[0][0],
+    maxX = hand[0][0],
+    minY = hand[0][1],
+    maxY = hand[0][1];
+  for (let i = 0; i < hand.length; i++) {
+    minX = Math.min(minX, hand[i][0]);
+    maxX = Math.max(maxX, hand[i][0]);
+    minY = Math.min(minY, hand[i][1]);
+    maxY = Math.max(maxY, hand[i][1]);
   }
-  const x_values=hand.map(point=>(point[0]-minX)/(maxX-minX));
-  const y_values=hand.map(point=>(point[1]-minY)/(maxY-minY));
-  return [...x_values,...y_values];
+  const x_values = hand.map((point) => (point[0] - minX) / (maxX - minX));
+  const y_values = hand.map((point) => (point[1] - minY) / (maxY - minY));
+  return [...x_values, ...y_values];
 }
