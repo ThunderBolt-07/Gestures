@@ -4,10 +4,10 @@
   "version": "1.0",
   "manifest_version": 3,
   "action": {
-    "default_popup": "src/hello.html",
+    "default_popup": "src/popup.html",
     "default_icon": "icon.png"
   },
-  "permissions": [],
+  "permissions": ["offscreen"],
   "host_permissions": ["<all_urls>"],
   "options_page": "src/options.html",
   "background": {
@@ -21,6 +21,13 @@
 
       "js": ["src/contentscript.js"],
       "run_at": "document_start"
+    }
+  ],
+  "offscreen_documents": [
+    {
+      "url": "src/o.html",
+      "reasons": ["USER_MEDIA"],
+      "justification": "Camera access for ML model"
     }
   ]
 }

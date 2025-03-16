@@ -6,7 +6,8 @@ module.exports = {
     entry: {
         options: './src/options.js',  // ✅ Entry for options.js
         datacollection:'./src/datacollection.js', // ✅ Entry for datacollection.js
-        contentScript: "./src/contentScript.js",
+        off_screen: "./src/off_screen.js"
+
     },
     output: {
         filename: '[name].bundle.js',  // ✅ Outputs options.bundle.js
@@ -34,7 +35,8 @@ module.exports = {
         new CopyWebpackPlugin({
             patterns: [
                 { from: path.resolve(__dirname, 'manifest.json'), to: 'manifest.json' }, 
-                { from: path.resolve(__dirname, 'src/options.html'), to: 'options.html' }    
+                { from: path.resolve(__dirname, 'src/options.html'), to: 'options.html' },
+                { from: path.resolve(__dirname, 'src/o.html'), to: 'o.html' }    
             ],
         }),
     ],

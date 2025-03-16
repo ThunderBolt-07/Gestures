@@ -12,5 +12,5 @@
     "file-loader": "^6.2.0",
     "webpack": "^5.98.0",
     "webpack-cli": "^6.0.1"
-  }
+  }  
 }
