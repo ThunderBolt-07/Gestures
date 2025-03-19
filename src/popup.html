@@ -1,24 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=250, initial-scale=1.0">
+    <title>Gesture Control</title>
+    <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <button id="permission">Enable Camera</button>
-  <video id="video"></video>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
-</head>
-<body>
-  <button id="permission">Enable Camera</button>
-  
-  <script src="./popup.js" type="module"></script>  
-</body>  
+    <h2>Gesture Control</h2>
+
+    <!-- Camera Toggle -->
+    <div class="toggle-container">
+        <span id="cameraStatus">Camera On/Off</span>
+        <label class="switch">
+            <input type="checkbox" id="cameraToggle">
+            <span class="slider"></span>
+        </label>
+    </div>
+
+    <button id="powerSaveBtn" class="button power-save">Enable Power Saving</button>
+
+    <div class="slider-container">
+        <label for="sensitivity">Hand Sensitivity</label>
+        <input type="range" id="sensitivity" min="10" max="100" value="50">
+    </div>
+
+    <button id="debugModeBtn" class="button debug">Enable Debug Mode</button>
+
+    <script src="./popup.js" type="module"></script>  
 </body>
 </html>
